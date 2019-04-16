@@ -1,0 +1,259 @@
+---
+title: "553.613 HW4"
+author: "Ruoxi Liu"
+date: "12/5/2018"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+Problem 1
+$\\$
+(a)
+```{r}
+library(MASS)
+fit1 <- lm(time ~ dist+climb, data=hills)
+summary(fit1)
+```
+$\\$
+(b)
+```{r}
+par(mfrow = c(2,2))
+plot(fit1, which=c(3:6))
+```
+```{r}
+summary(hills)
+hills["Knock Hill",]
+hills["Bens of Jura",]
+```
+$\\$
+Knock Hill and Bens of Jura are seemed to be outliers. Checking the data, we see that Knock Hill may be recorded by error, since the distance of Knock Hill is only 3km, but the time is very long. For Bens of Jura, we could the climb of it is very large; it is actually the maximum of climb, and this may make it an outlier.
+$\\$
+(c)
+```{r}
+fit2 <- lm(time ~ dist+climb+ I(climb*climb), data=hills)
+partial.residual2 <- residuals(fit2) + coefficients(fit2)[3] * hills$climb
+plot(hills$climb, partial.residual2, xlab = "", ylab = "", main = "Partial residual plot on Climb")
+abline(0, coefficients(fit2)[3])
+```
+There is a pattern of the partial residual plot, so it doesn't recommend someone to use this model.
+$\\$
+(d)
+$\\$
+Huber's M-estimation
+```{r}
+rfit.huer <- rlm(time ~ dist+climb+I(climb*climb), data=hills, maxit = 50)
+summary(rfit.huer)
+```
+$\\$
+Tukey's M-estimation
+```{r}
+rfit.tukey <- rlm(time ~ dist+climb+I(climb^2), data=hills, maxit = 50, psi = "psi.bisquare")
+summary(rfit.tukey)
+```
+$\\$
+Least Trimmed Square
+```{r}
+lts <- lqs(time ~ dist+climb+I(climb^2), data=hills, method = "lts") 
+lts
+```
+$\\$
+(e)
+```{r}
+bcoef.huber <- matrix(0, 1000, 4) 
+bcoef.tukey <- matrix(0, 1000, 4) 
+bcoef.lts <- matrix(0, 1000, 4) 
+
+for (i in 1:1000) {
+    newy <- predict(rfit.huer) + residuals(rfit.huer)[sample(length(hills$time),
+        replace = T)]
+    huber.i <- rlm(newy ~ hills$dist + hills$climb+I(hills$climb^2), maxit = 50)
+    bcoef.huber[i, ] <- huber.i$coef
+    newy2 <- predict(rfit.tukey) + residuals(rfit.tukey)[sample(length(hills$time),
+        replace = T)]
+    tukey.i <- rlm(newy2 ~ hills$dist + hills$climb + I(hills$climb^2), maxit = 50, psi = psi.bisquare)
+    bcoef.tukey[i, ] <- tukey.i$coef
+    newy3 <- predict(lts) + residuals(lts)[sample(length(hills$time),
+        replace = T)]
+    lts.i <- lqs(newy3 ~ hills$dist + hills$climb + I(hills$climb^2), method = "lts")
+    bcoef.lts[i, ] <- lts.i$coef
+}
+
+```
+```{r}
+quantile(bcoef.huber[, 1], probs = c(0.025, 0.975))
+quantile(bcoef.huber[, 2], probs = c(0.025, 0.975))
+quantile(bcoef.huber[, 3], probs = c(0.025, 0.975))
+```
+```{r}
+quantile(bcoef.tukey[, 1], probs = c(0.025, 0.975))
+quantile(bcoef.tukey[, 2], probs = c(0.025, 0.975))
+quantile(bcoef.tukey[, 3], probs = c(0.025, 0.975))
+```
+```{r}
+quantile(bcoef.lts[, 1], probs = c(0.025, 0.975))
+quantile(bcoef.lts[, 2], probs = c(0.025, 0.975))
+quantile(bcoef.lts[, 3], probs = c(0.025, 0.975))
+```
+$\\$
+$\\$
+$\\$
+$\\$
+$\\$
+$\\$
+$\\$
+$\\$
+$\\$
+$\\$
+$\\$
+$\\$
+$\\$
+$\\$
+
+Problem 2
+$\\$
+1. Backward
+```{r}
+library(faraway)
+bfit1 <- lm(lpsa ~., data = prostate)
+summary(bfit1)
+```
+Suppose we set $\alpha_out$ = 0.1
+```{r}
+bfit2 <- lm(lpsa ~. -gleason, data = prostate)
+summary(bfit2)
+```
+```{r}
+bfit3 <- lm(lpsa ~. -gleason-lcp, data = prostate)
+summary(bfit3)
+```
+```{r}
+bfit4 <- lm(lpsa ~. -gleason-lcp-pgg45, data = prostate)
+summary(bfit4)
+```
+```{r}
+bfit5 <- lm(lpsa ~. -gleason-lcp-pgg45-age, data = prostate)
+summary(bfit5)
+```
+```{r}
+bfit6 <- lm(lpsa ~. -gleason-lcp-pgg45-age-lbph, data = prostate)
+summary(bfit6)
+```
+The final variables selected by the backward method are lcavol, lweight, and svi
+$\\$
+2. Forward
+```{r}
+ffit1 <- lm(lpsa ~ lcavol,data = prostate)
+ffit2 <- lm(lpsa ~ lweight,data = prostate)
+ffit3 <- lm(lpsa ~ age,data = prostate)
+ffit4 <- lm(lpsa ~ lbph,data = prostate)
+ffit5 <- lm(lpsa ~ svi,data = prostate)
+ffit6 <- lm(lpsa ~ lcp,data = prostate)
+ffit7 <- lm(lpsa ~ gleason,data = prostate)
+ffit8 <- lm(lpsa ~ pgg45,data = prostate)
+summary(ffit1)
+summary(ffit2)
+summary(ffit3)
+summary(ffit4)
+summary(ffit5)
+summary(ffit6)
+summary(ffit7)
+summary(ffit8)
+```
+Set $/alpha_in$ = 0.1, add in the variable with the smallest marginal p-value < 0.1:lcavol
+
+```{r}
+
+ffit2a <- lm(lpsa ~ lcavol+lweight,data = prostate)
+ffit3a <- lm(lpsa ~ lcavol+age,data = prostate)
+ffit4a <- lm(lpsa ~ lcavol+lbph,data = prostate)
+ffit5a <- lm(lpsa ~ lcavol+svi,data = prostate)
+ffit6a <- lm(lpsa ~ lcavol+lcp,data = prostate)
+ffit7a <- lm(lpsa ~ lcavol+gleason,data = prostate)
+ffit8a <- lm(lpsa ~ lcavol+pgg45,data = prostate)
+
+summary(ffit2a)
+summary(ffit3a)
+summary(ffit4a)
+summary(ffit5a)
+summary(ffit6a)
+summary(ffit7a)
+summary(ffit8a)
+```
+Add in the variable with the smallest marginal p-value < 0.1:lweight
+
+```{r}
+
+ffit3b <- lm(lpsa ~ lweight+lcavol+age,data = prostate)
+ffit4b <- lm(lpsa ~ lweight+lcavol+lbph,data = prostate)
+ffit5b <- lm(lpsa ~ lweight+lcavol+svi,data = prostate)
+ffit6b <- lm(lpsa ~ lweight+lcavol+lcp,data = prostate)
+ffit7b <- lm(lpsa ~ lweight+lcavol+gleason,data = prostate)
+ffit8b <- lm(lpsa ~ lweight+lcavol+pgg45,data = prostate)
+
+summary(ffit3b)
+summary(ffit4b)
+summary(ffit5b)
+summary(ffit6b)
+summary(ffit7b)
+summary(ffit8b)
+```
+Add in the variable with the smallest marginal p-value < 0.1:svi
+
+```{r}
+ffit3c <- lm(lpsa ~ lweight+lcavol+age+svi,data = prostate)
+ffit4c <- lm(lpsa ~ lweight+lcavol+lbph+svi,data = prostate)
+ffit6c <- lm(lpsa ~ lweight+lcavol+lcp+svi,data = prostate)
+ffit7c <- lm(lpsa ~ lweight+lcavol+gleason+svi,data = prostate)
+ffit8c <- lm(lpsa ~ lweight+lcavol+pgg45+svi,data = prostate)
+
+summary(ffit3c)
+summary(ffit4c)
+summary(ffit6c)
+summary(ffit7c)
+summary(ffit8c)
+```
+There's no variable with marginal p-value < 0.1, so we stop adding in new variables. And the variables selected by the forward method is lcavol, lweight, and svi.
+$\\$
+3. AIC
+```{r}
+full <- lm(lpsa ~., data = prostate)
+g <- step(full, direction = "both")
+```
+The final variables selected by AIC is lcavol, lweight, age, lbph, svi
+$\\$
+4. Adjusted $R^2$
+```{r}
+library("leaps")
+b <- regsubsets(lpsa ~ ., data = prostate)
+(rs <- summary(b))
+```
+```{r}
+plot(2:9, rs$rsq, col = 1, xlab = "Number of predictor (including intercept)",
+ylab = "", type = "l")
+lines(2:9, rs$adjr, col = 2)
+legend("topleft", lty = 1, col = 1:2, legend = c("R-squared", "adjusted R-squared"))
+```
+The adjusted $R^2$ suggests that the best model should have 4 predictor variables. Reference to the subset selection summary, we should keep lcavol, lweight, svi, lbph.
+$\\$
+5. Mallows $C_p$
+```{r}
+plot(2:9, rs$cp, xlab = "Number of predictors (including intercept)", ylab = "Mallow's Cp", ylim=c(0, 25))
+abline(0, 1)
+```
+Mallows $C_p$ suggests that we should keep 5 variables: lcavol, lweight, svi, lbph and age.
+$\\$
+Bonus
+$\\$
+(a)
+$\\$
+Stein's paradox shows that average is not always the best estimator. When three or more parameters are estimated simultaneously, there exists an estimator more accurate than the average. The intuition behind this is that optimizing for the risk of a combined estimator is not the same as optimizing for the risks for each estimator separately (the ordinary estimator of the means).
+$\\$
+(b)
+$\\$
+The risk of an estimator is the expected squared error. An estimator $\hat\theta$ is admissible if there is no other estimator $\theta^*$ with smaller risk. The James-Stein estimator is inadmissible because the shrinking factor c can assume negative values, and by setting c = 0, one gets a smaller risk. 
+$\\$
+(c)
+$\\$
+Galtonian perspective made the Stein paradox transparent. It is from a regression perspective. The ordinary estimator $\hat\theta$ = X is derived from the theoretical regression line of X on $\theta$. This line should be used if we want to predict X according to $\theta$,not the other way around. So we are using the wrong regression line as we calculate average as an estimator.
