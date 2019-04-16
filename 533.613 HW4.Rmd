@@ -8,6 +8,8 @@ output:
     df_print: paged
 ---
 
+Welcome Ruoxi to the team!
+
 Problem 1
 $\\$
 (a)
